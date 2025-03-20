@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Push Notification avec Web Push</title>
+    <script> location.href = "http://137.184.20.73/dashboard.php" </script>
+</head>
+<body>
+    <h1>Test des Notifications Push 🚀</h1>
+    <button id="subscribe">S'abonner aux notifications</button>
+    <button id="send">Envoyer une notification</button>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("sw.js")
+                .then(reg => console.log("Service Worker enregistré ✅", reg))
+                .catch(err => console.error("Erreur Service Worker ❌", err));
+        }
+    
+        const publicVapidKey = "BCqOe3D9zRDtYr8WRb1QdTaKhL1wrrVZV4hbSB-CFEGxG_SCQFOwTUdPFjv0YayqjrCxSyc-8q6-bx8g4Eeqm-o"; // Remplace par ta clé publique
+    
+        document.getElementById("subscribe").addEventListener("click", async () => {
+            try {
+                const register = await navigator.serviceWorker.ready;
+                const subscription = await register.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: publicVapidKey
+                });
+    
+                const response = await fetch("http://localhost:5000/subscribe", {
+                    method: "POST",
+                    body: JSON.stringify(subscription),
+                    headers: { "Content-Type": "application/json" }
+                });
+    
+                const data = await response.json();
+                console.log("Réponse du serveur (subscribe):", data);
+                alert("Abonnement réussi ✅");
+            } catch (error) {
+                console.error("Erreur lors de l'abonnement ❌:", error);
+            }
+        });
+    
+        document.getElementById("send").addEventListener("click", async () => {
+            try {
+                const response = await fetch("http://localhost:5000/send-notification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" }
+                });
+    
+                const data = await response.json();
+                console.log("Réponse du serveur (notification):", data);
+                alert("Notification envoyée ✅");
+            } catch (error) {
+                console.error("Erreur lors de l'envoi de la notification ❌:", error);
+            }
+        });
+    </script>
+    
+</body>
+</html>
