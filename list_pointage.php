@@ -1,34 +1,34 @@
 <?php
 session_start();
-include('database_connection.php'); // Connexion à la base de données
 
-/// Vérifie si l'utilisateur est connecté
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php"); // Redirige vers la connexion si non connecté
-    exit();
+$user_id = $_SESSION['user_id']; // Récupération de l'ID utilisateur
+
+$url = "http://137.184.20.73:8091/csharp/get/{$user_id}";
+
+// Initialiser une session cURL
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, $url);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+
+// Exécuter la requête
+$response = curl_exec($ch);
+
+// Vérifier les erreurs
+if (curl_errno($ch)) {
+    die("Erreur cURL : " . curl_error($ch));
 }
 
-// Vérifie si l'utilisateur est un admin
-if ($_SESSION['role'] !== 'user') {
-    header("Location: unauthorized.php"); // Redirige vers une page d'erreur
-    exit();
+// Fermer la session cURL
+curl_close($ch);
+
+// Convertir la réponse JSON en tableau associatif PHP
+$pointages = json_decode($response, true);
+
+// Vérifier si la conversion a réussi
+if ($pointages === null) {
+    die("Erreur de conversion JSON");
 }
 
-$user_id = $_SESSION['user_id']; // ID de l'utilisateur connecté
-
-// Configurer la locale en français (avant d'utiliser strftime)
-setlocale(LC_TIME, 'fr_FR.UTF-8', 'fr_FR', 'French_France', 'French');
-
-// Récupérer les pointages de l'utilisateur connecté
-$stmt = $connect->prepare("SELECT * FROM pointage WHERE user_id = :user_id ORDER BY date DESC");
-$stmt->bindParam(':user_id', $user_id);
-$stmt->execute();
-$pointages = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-// Fonction pour formater la date en "Jeudi 13 mai 2024"
-function formatDate($date) {
-    return strftime('%A %d %B %Y', strtotime($date));
-}
 ?>
 
 
@@ -107,25 +107,23 @@ function formatDate($date) {
         </tr>
     </thead>
     <tbody>
-        <?php if (!empty($pointages)): ?>
+        <?php if (!empty($pointages) && is_array($pointages)): ?>
             <?php foreach ($pointages as $index => $pointage): ?>
                 <tr>
                     <td><?= $index + 1 ?></td>
-                    <td>
-                        <?= htmlspecialchars($pointage['heure_entree']) ?> 
-                       
-                    </td>
-                    <td> <?= $pointage['heure_sortie'] ? htmlspecialchars($pointage['heure_sortie']) : '-' ?></td>
-                    <td><?= ucfirst(formatDate($pointage['date'])) ?></td>
+                    <td><?= htmlspecialchars($pointage['heure_entree'] ?? '-') ?></td>
+                    <td><?= isset($pointage['heure_sortie']) ? htmlspecialchars($pointage['heure_sortie']) : '-' ?></td>
+                    <td><?= isset($pointage['date']) ? ucfirst(formatDate($pointage['date'])) : '-' ?></td>
                 </tr>
             <?php endforeach; ?>
         <?php else: ?>
             <tr>
-                <td colspan="3" class="text-center">Aucun pointage trouvé</td>
+                <td colspan="4" class="text-center">Aucun pointage trouvé</td>
             </tr>
         <?php endif; ?>
     </tbody>
 </table>
+
 
         </div>
     </div>

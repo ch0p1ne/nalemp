@@ -2,7 +2,7 @@
 $db_host = "localhost";
 $db_name = "nalemp";
 $db_user = "root";
-$db_pass = "password*#21";
+$db_pass = "";
 
 try{
 	
